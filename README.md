@@ -39,7 +39,7 @@ active-graphrag run --config configs/default.yaml --data data/hotpotqa/evaluatio
 
 Repeat calibration separately for each dataset. A null threshold disables bypassing. Thresholds maximize the number of bypassed questions subject to a mean loss of at most one F1 percentage point across the entire calibration set. Calibration averages always-retrieve scores over the decoding seeds. `--mode always` and `--mode closed` provide routing controls. Default generation seeds are 42, 43, and 44.
 
-Outputs include one JSONL record per question and seed, answer-level EM/F1, terminal graphs, extraction records, entity-alignment decisions, pruning events, input/output token counts, and stage timings. Empty responses and context overflow remain in the denominator. `summary.json` reports means across runs. The internal answer scorer implements normalized EM/token F1; official dataset scripts should also be used for submission reporting, including any dataset-specific alias files.
+Outputs include one JSONL record per question and seed, answer-level EM/F1, terminal graphs, extraction records, entity-alignment decisions, pruning events, input/output token counts, and stage timings. Empty responses and context overflow remain in the denominator. `summary.json` reports means across runs. The internal answer scorer implements normalized EM/token F1;Answer-level EM and token-level F1 are computed from the returned answer field using the normalization and scoring functions in `evaluation.py`.
 
 ## Method
 
@@ -57,7 +57,7 @@ Prompts are in `src/active_graphrag/prompts.py`. All graph operations occur in t
 
 For horizon sensitivity, create configurations with `max_rounds` from 1 to 6 and reuse the threshold calibrated at four rounds. For component switches: set `extractor` equal to `navigator` for symmetric extraction, `graceful: false` for forced completion, `stateful: false` to retain only the current local graph, or `reflection: false` to select exploration from the question and action history without graph-based reflection or pruning. These operational definitions are explicit in the configuration and controller.
 
-The repository implements Active-GraphRAG and its routing controls. Independent baseline systems such as HippoRAG and StepChain GraphRAG are not relabeled substitutes for this pipeline; run their implementations separately under the comparison protocol. No benchmark result is prefilled. Published scores, hardware timings and full baseline comparisons require actual experimental runs.
+This repository contains Active-GraphRAG, its confidence-routing controls, and configuration files for component ablations and retrieval-budget experiments. Baseline systems are maintained in their respective repositories.
 
 ## Development
 
@@ -66,4 +66,4 @@ pytest -q
 python -m compileall -q src
 ```
 
-Tests use deterministic model doubles and embeddings to check controller constraints, graph updates and scoring without downloading model weights. They do not constitute a GPU benchmark run. The model adapter uses [Transformers generation](https://huggingface.co/docs/transformers/main_classes/text_generation) and the [BGE-M3 dense embedding interface](https://huggingface.co/BAAI/bge-m3).
+The unit tests use deterministic fixtures to verify controller constraints, graph updates, and scoring. Model inference is implemented through Transformers, with BGE-M3 providing dense embeddings.
