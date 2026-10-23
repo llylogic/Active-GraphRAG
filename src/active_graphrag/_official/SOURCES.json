@@ -1,0 +1,40 @@
+[
+  {
+    "repository": "https://github.com/hotpotqa/hotpot",
+    "commit": "3635853403a8735609ee997664e1528f4480762a",
+    "upstream_path": "hotpot_evaluate_v1.py",
+    "package_path": "hotpot.py",
+    "upstream_sha256": "d35fc91a6db21d791dbdda11daf3856e9359f5701d54e3eefba20d88fecc02c0",
+    "packaged_sha256": "d35fc91a6db21d791dbdda11daf3856e9359f5701d54e3eefba20d88fecc02c0",
+    "changes": []
+  },
+  {
+    "repository": "https://github.com/Alab-NII/2wikimultihop",
+    "commit": "13800e5be57df1b4040b9b1588c6c811779e69e9",
+    "upstream_path": "2wikimultihop_evaluate_v1.1.py",
+    "package_path": "twowiki.py",
+    "upstream_sha256": "7c09ee2ec98c7ecb57df79eb68dba22eb381ab58d50e730dfcefafb4dda31458",
+    "packaged_sha256": "7c09ee2ec98c7ecb57df79eb68dba22eb381ab58d50e730dfcefafb4dda31458",
+    "changes": []
+  },
+  {
+    "repository": "https://github.com/StonyBrookNLP/musique",
+    "commit": "922ac98f19a201998dbdae6d7f2887a5258dbdeb",
+    "upstream_path": "metrics/answer.py",
+    "package_path": "musique/answer.py",
+    "upstream_sha256": "10368f619b4d5ef5d83748c05a96c0afd332a14ab5c010740c98d58dfaefe974",
+    "packaged_sha256": "fb61cfc21678dbf1f0d2f672370948e2ce3248d66cacaa7ad0ea0d9cece43948",
+    "changes": [
+      "Package-relative import of Metric; scoring logic unchanged."
+    ]
+  },
+  {
+    "repository": "https://github.com/StonyBrookNLP/musique",
+    "commit": "922ac98f19a201998dbdae6d7f2887a5258dbdeb",
+    "upstream_path": "metrics/metric.py",
+    "package_path": "musique/metric.py",
+    "upstream_sha256": "c858d1bfda2f0b005065e87a402cd2f82154eb7eed5916845ae130759cc3a299",
+    "packaged_sha256": "c858d1bfda2f0b005065e87a402cd2f82154eb7eed5916845ae130759cc3a299",
+    "changes": []
+  }
+]

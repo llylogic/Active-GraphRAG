@@ -1,25 +1,44 @@
-import re
-import string
-from collections import Counter
+import json
+from functools import lru_cache
+from pathlib import Path
+from ._official import hotpot, twowiki
+from ._official.musique.answer import AnswerMetric
 
 
-def normalize(text):
-    text = "".join(c for c in text.lower() if c not in string.punctuation)
-    return " ".join(re.sub(r"\b(a|an|the)\b", " ", text).split())
+normalize = hotpot.normalize_answer
+
+
+@lru_cache(maxsize=None)
+def scorer_id(dataset):
+    paths = {"hotpotqa": "hotpot.py", "2wiki": "twowiki.py", "musique": "musique/answer.py"}
+    if dataset not in paths:
+        raise ValueError(f"Unsupported dataset: {dataset}")
+    sources = json.loads((Path(__file__).parent / "_official/SOURCES.json").read_text(encoding="utf-8"))
+    source = next(s for s in sources if s["package_path"] == paths[dataset])
+    return f"{dataset}:{source['commit']}:{source['upstream_path']}"
 
 
 def score(answer, references, dataset="hotpotqa"):
-    pred = normalize(answer)
-    scores = []
-    for gold in references:
-        gold = normalize(gold)
-        em = float(pred == gold)
-        overlap = sum((Counter(pred.split()) & Counter(gold.split())).values())
-        if dataset in {"hotpotqa", "2wiki"} and pred != gold and (pred in {"yes", "no", "noanswer"} or gold in {"yes", "no", "noanswer"}):
-            overlap = 0
-        f1 = 2 * overlap / (len(pred.split()) + len(gold.split())) if overlap else 0.0
-        scores.append((em*100, f1*100))
-    return {"em":max((x[0] for x in scores), default=0), "f1":max((x[1] for x in scores), default=0)}
+    """Compute answer-only percentages with the dataset's official functions."""
+    scorer_id(dataset)
+    if not isinstance(answer, str):
+        raise TypeError("The returned answer field must be a string")
+    if not isinstance(references, (list, tuple)) or not references or not all(isinstance(r, str) for r in references):
+        raise ValueError("At least one string reference answer is required")
+    if dataset == "musique":
+        metric = AnswerMetric()
+        metric(answer, references)
+        em, f1 = metric.get_metric()
+    else:
+        metrics = dict(em=0.0, f1=0.0, prec=0.0, recall=0.0)
+        if dataset == "hotpotqa":
+            if len(references) != 1:
+                raise ValueError("Official HotpotQA evaluation uses one gold answer per question")
+            hotpot.update_answer(metrics, answer, references[0])
+        else:
+            twowiki.update_answer(metrics, answer, references)
+        em, f1 = metrics["em"], metrics["f1"]
+    return {"em": float(em) * 100, "f1": float(f1) * 100}
 
 
 def calibrate(rows, max_loss=1.0):

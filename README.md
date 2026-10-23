@@ -22,11 +22,13 @@ Obtain the official development data from [HotpotQA](https://hotpotqa.github.io/
 
 ```bash
 active-graphrag prepare --source data/hotpot_dev_distractor_v1.json --dataset hotpotqa --output data/hotpotqa
-active-graphrag prepare --source data/2wiki/dev.json --dataset 2wiki --output data/2wiki
+active-graphrag prepare --source data/2wiki/data_ids/dev.json --dataset 2wiki --aliases data/2wiki/id_aliases.json --output data/2wiki/prepared
 active-graphrag prepare --source data/musique_ans_v1.0_dev.jsonl --dataset musique --output data/musique
 ```
 
 Preparation saves disjoint sets of 200 calibration and 1,000 evaluation questions, together with the selected identifiers and source SHA-256. Split selection is deterministic. Gold answers are used only for scoring. Supporting annotations are never passed to the retriever or models.
+
+For the 2Wiki `data_ids` release, supply its official `id_aliases.json`. Answer references include the canonical answer, aliases, and demonyms associated with `answer_id`, matching the v1.1 evaluation script. The legacy release without `answer_id` uses its canonical answers and does not take `--aliases`. The chosen reference policy and alias-file checksum are recorded. MuSiQue-Ans uses the canonical answer and `answer_aliases`; unanswerable MuSiQue-Full rows are rejected.
 
 Run both calibration conditions with the same three seeds, then select the routing threshold:
 
@@ -39,7 +41,21 @@ active-graphrag run --config configs/default.yaml --data data/hotpotqa/evaluatio
 
 Repeat calibration separately for each dataset. A null threshold disables bypassing. Thresholds maximize the number of bypassed questions subject to a mean loss of at most one F1 percentage point across the entire calibration set. Calibration averages always-retrieve scores over the decoding seeds. `--mode always` and `--mode closed` provide routing controls. Default generation seeds are 42, 43, and 44.
 
-Outputs include one JSONL record per question and seed, answer-level EM/F1, terminal graphs, extraction records, entity-alignment decisions, pruning events, input/output token counts, and stage timings. Empty responses and context overflow remain in the denominator. `summary.json` reports means across runs. The internal answer scorer implements normalized EM/token F1;Answer-level EM and token-level F1 are computed from the returned answer field using the normalization and scoring functions in `evaluation.py`.
+Outputs include one JSONL record per question and seed, answer-level EM/F1, terminal graphs, extraction records, entity-alignment decisions, pruning events, input/output token counts, and stage timings. Empty responses and context overflow remain in the denominator. `summary.json` reports means across runs. Answer-level EM and token-level F1 are computed from the returned answer field by the official benchmark scoring functions, called through `evaluation.py`, and expressed as percentages. Scores are retained at full precision before averaging. The upstream source revisions, file checksums, and licenses are recorded in `src/active_graphrag/_official/` and [THIRD_PARTY.md](THIRD_PARTY.md).
+
+### Score saved predictions
+
+Saved answers can be evaluated without loading models or rerunning inference:
+
+```bash
+active-graphrag score --predictions runs/eval/predictions.jsonl --source data/hotpot_dev_distractor_v1.json --dataset hotpotqa --manifest data/hotpotqa/split_manifest.json --output runs/eval-official
+active-graphrag score --predictions runs/2wiki-eval/predictions.jsonl --source data/2wiki/data_ids/dev.json --dataset 2wiki --aliases data/2wiki/id_aliases.json --manifest data/2wiki/prepared/split_manifest.json --output runs/2wiki-eval-official
+active-graphrag score --predictions runs/musique-eval/predictions.jsonl --source data/musique_ans_v1.0_dev.jsonl --dataset musique --manifest data/musique/split_manifest.json --output runs/musique-eval-official
+```
+
+The manifest fixes the evaluated question IDs and verifies the gold-source checksum. Default seeds are 42, 43, and 44; specify `--seeds` for another run. Each requested seed is evaluated over the complete manifest subset. Missing predictions receive empty answers, remain in the denominator, and are counted in the summary. Duplicate predictions and questions outside the selected subset are rejected. Only answer EM/F1 are reported; these are not supporting-fact, joint, or reasoning-chain scores.
+
+Use `--split calibration` to rescore the always-retrieve and closed-book calibration predictions. Then pass the two rescored `predictions.jsonl` files to `calibrate`. Scoring provenance and answer-reference policies must match. Rerun `prepare` before new inference to record the reference policy. If the calibrated threshold changes, run full routing again with that threshold; rescoring final answers alone does not change routing decisions already made.
 
 ## Method
 

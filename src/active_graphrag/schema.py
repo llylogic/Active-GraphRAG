@@ -17,6 +17,7 @@ class Example:
     passages: list[Passage]
     answers: list[str]
     dataset: str
+    answer_reference_policy: str = "unspecified"
 
 
 @dataclass
